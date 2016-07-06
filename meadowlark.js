@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var fortune = require('./lib/fortune.js');
+var bodyParser = require('body-parser');
 var handlebars = require('express3-handlebars').create({
     defaultLayout:'main',
     helpers: {
@@ -14,7 +15,9 @@ var handlebars = require('express3-handlebars').create({
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/public'));//静态文件
+
+app.use(bodyParser.urlencoded({ extended: false }))//post url编码。
 
 app.use(function(req, res, next) {
     res.locals.showTests = app.get('env') !== 'production' && req.query.test === '1';
@@ -26,6 +29,26 @@ app.set('port', process.env.PORT || 3000);
 app.get('/', function(req, res) {
     res.render('home')
 });
+
+app.get('/newsletter', function(req, res){
+	res.render('newsletter', { csrf: 'CSRF token goes here' });
+});
+
+app.post('/process', function(req, res){
+	// console.log('Form (from querystring): ' + req.query.form);
+	// console.log('CSRF token (from hidden form field): ' + req.body._csrf);
+	// console.log('Name (from visible form field): ' + req.body.name);
+	// console.log('Email (from visible form field): ' + req.body.email);
+	// res.redirect(303, '/thank-you');
+	if(req.xhr || req.accepts('json,html')==='json'){
+		res.send({ success: true });
+	} else {
+		res.redirect(303, '/thank-you');
+	}
+});
+app.get('/thank-you', function(req, res) {
+	res.render('thank-you');
+})
 
 app.get('/about', function(req, res) {
     res.render('about', {
